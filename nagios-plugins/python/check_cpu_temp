@@ -40,6 +40,7 @@
 from __future__ import unicode_literals
 import sys
 import platform
+import argparse
 
 try:
     import sensors
@@ -75,13 +76,29 @@ elif distro in DEBIAN_BASED:
 else:
     raise Exception('Unknown distro')
 
+# some default variables
+averages = []
+high_temp = 0
+crit_temp = 0
+status = OK
+
+parser = argparse.ArgumentParser(description='Nagios plugin to check CPU(s) temperature(s)')
+#parser.add_argument("-d", "--default", dest="default", help="Check against default High/Crit values", default='', required=False)
+parser.add_argument("-w", "--warn", dest="warn", help="Check against a custom high value", default='', required=False)
+parser.add_argument("-c", "--crit", dest="crit", help="Check against a custom critical value", default='', required=False)
+args = parser.parse_args()
+
+#print args
+
+if not args:
+    print('Help')
+if args.warn:
+    high_temp = int(args.warn)
+if args.crit:
+    crit_temp = int(args.crit)
+
 #
 try:
-    averages = []
-    high_temp = 0
-    crit_temp = 0
-    status = OK
-
     chips = list(sensors.iter_detected_chips())
     for chip in chips:
         if chip.prefix == 'coretemp':
@@ -126,4 +143,3 @@ except Exception as e:
 
 finally:
     sensors.cleanup()
-
