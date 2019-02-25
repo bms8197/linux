@@ -41,7 +41,31 @@ from __future__ import unicode_literals
 import sys
 import platform
 import argparse
+import os
 
+# detect linux distributin
+distro = platform.dist()
+distro= distro[0]
+
+REDHAT_BASED = ['centos','redhat','fedora']
+DEBIAN_BASED = ['debian','ubuntu']
+
+# take care of pysensors different output CentOS vs. Debian
+if distro in REDHAT_BASED:
+    pos = 1
+    sp = "lm_sensors"
+elif distro in DEBIAN_BASED:
+    pos = 0
+    sp = "lm-sensors"
+else:
+    raise Exception('Unknown distro')
+
+# check if sensors package is installed
+if not os.path.exists('/usr/bin/sensors'):
+    print('Sensors binary not found. Please install {} package!'.format(sp))
+    sys.exit()
+
+# check if pysensors python module is installed
 try:
     import sensors
     sensors.init()
@@ -49,7 +73,7 @@ except ImportError, e:
     print('Module pysensors not found. Please install it!')
     sys.exit()
 
-# deal with python 2.x unicode error
+# deal with python 2.x unicode error for degree sign when using check_nrpe
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -62,41 +86,25 @@ UNK = 3
 # degree sign
 ds = "\u00b0"
 
-# detect linux distributin
-distro = platform.dist()
-distro= distro[0]
-
-REDHAT_BASED = ['centos','redhat','fedora']
-DEBIAN_BASED = ['debian','ubuntu']
-
-if distro in REDHAT_BASED:
-    pos = 1
-elif distro in DEBIAN_BASED:
-    pos = 0
-else:
-    raise Exception('Unknown distro')
-
 # some default variables
 averages = []
 high_temp = 0
 crit_temp = 0
 status = OK
 
+# use arguments from warning and critical values
 parser = argparse.ArgumentParser(description='Nagios plugin to check CPU(s) temperature(s)')
 parser.add_argument("-w", "--warn", dest="warn", help="Check temperature against a custom HIGH value", default='', required=False)
 parser.add_argument("-c", "--crit", dest="crit", help="Check temperature against a custom CRIT value", default='', required=False)
 args = parser.parse_args()
 
+# if no arguments provided use the default HIGH/CRIT values
 if args.warn:
     high_temp = int(args.warn)
 if args.crit:
     crit_temp = int(args.crit)
 
-#if crit_temp < high_temp:
-#    print("CRIT temp should be greather than HIGH temp")
-#    sys.exit()
-
-#
+# let's do it
 try:
     chips = list(sensors.iter_detected_chips())
     for chip in chips:
@@ -109,10 +117,10 @@ try:
                 current_temp = subfeatures[0].get_value()
                 temp_sum += current_temp
 
-		if not high_temp:
-		    high_temp = subfeatures[1].get_value()
-		if not crit_temp:
-                    crit_temp = subfeatures[2].get_value()
+            if not high_temp:
+		        high_temp = subfeatures[1].get_value()
+            if not crit_temp:
+                crit_temp = subfeatures[2].get_value()
 
             averages.append(temp_sum/len(features[1:]))
 
@@ -128,9 +136,8 @@ try:
     averages=map(lambda s: unicode(s) + ds + "C",averages)
     output="CPU(s) temperature(s): {}; high={}; crit={}".format(" ".join(averages),high_temp,crit_temp)
 
-    #
+    # print statuses + output
     if status == OK:
-        #print("OK - CPU(s) temperature(s): {averages}; high={high_temp}; crit={crit_temp}".format(averages=averages,high_temp=high_temp,crit_temp=crit_temp))
         print("OK - " + output)
     elif status == WARN:
         print("WARNING - " + output)
@@ -144,4 +151,3 @@ except Exception as e:
 
 finally:
     sensors.cleanup()
-
