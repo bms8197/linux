@@ -83,19 +83,18 @@ crit_temp = 0
 status = OK
 
 parser = argparse.ArgumentParser(description='Nagios plugin to check CPU(s) temperature(s)')
-#parser.add_argument("-d", "--default", dest="default", help="Check against default High/Crit values", default='', required=False)
-parser.add_argument("-w", "--warn", dest="warn", help="Check against a custom high value", default='', required=False)
-parser.add_argument("-c", "--crit", dest="crit", help="Check against a custom critical value", default='', required=False)
+parser.add_argument("-w", "--warn", dest="warn", help="Check temperature against a custom HIGH value", default='', required=False)
+parser.add_argument("-c", "--crit", dest="crit", help="Check temperature against a custom CRIT value", default='', required=False)
 args = parser.parse_args()
 
-#print args
-
-if not args:
-    print('Help')
 if args.warn:
     high_temp = int(args.warn)
 if args.crit:
     crit_temp = int(args.crit)
+
+#if crit_temp < high_temp:
+#    print("CRIT temp should be greather than HIGH temp")
+#    sys.exit()
 
 #
 try:
@@ -110,8 +109,10 @@ try:
                 current_temp = subfeatures[0].get_value()
                 temp_sum += current_temp
 
-                high_temp = subfeatures[1].get_value()
-                crit_temp = subfeatures[2].get_value()
+		if not high_temp:
+		    high_temp = subfeatures[1].get_value()
+		if not crit_temp:
+                    crit_temp = subfeatures[2].get_value()
 
             averages.append(temp_sum/len(features[1:]))
 
@@ -143,3 +144,4 @@ except Exception as e:
 
 finally:
     sensors.cleanup()
+
