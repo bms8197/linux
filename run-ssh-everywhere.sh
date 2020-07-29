@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2013
 
 #
 # For a faster run please copy your ssh public key to the remote servers
