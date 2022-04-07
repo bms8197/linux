@@ -74,34 +74,24 @@ os.system('clear')
 i = 0
 total_users = 0
 
-for item in output.split("\n"):
-     if i < 3:
-         i=i+1
-         continue
+print('{:<22}{:<20}{:<15}{:<15}{:<20}'.format('VPN USER', 'CONNECTED FROM', 'BYTES REC', 'BYTES SENT', 'CONNECTED SINCE'))
+print('-----------------------------------------------------------------------------------------------')
 
+output = output.split("\r\n")[4:-1]
+for item in sorted(output):
      line = item.strip()
      line = normalize_whitespace(line)
-     line = line.replace('Common Name','VPN USER')
-     line = line.replace('Real Address','CONNECTED FROM')
-     line = line.replace('Bytes Received','BYTES REC')
-     line = line.replace('Bytes Sent','BYTES SENT')
-     line = line.replace('Connected Since','CONNECTED SINCE')
-     line = line.replace('ROUTING TABLE','')
      line_s = line.split(',')
 
-     if line_s[0] == 'VPN User' or line_s[0] == 'VPN USER':
-         print('{:<22}{:<20}{:<15}{:<15}{:<20}'.format(line_s[0],line_s[1].split(':')[0],line_s[2],line_s[3],line_s[4]))
-         print('-----------------------------------------------------------------------------------------------')
-     else:
-         if len(line_s) == 5:
-             if args.users:
-                 for user in args.users:
-                     if user in line_s[0]:
-                         print('{:<22}{:<20}{:<15}{:<15}{:<20}'.format(line_s[0],line_s[1].split(':')[0],line_s[2],line_s[3],line_s[4]))
-                         total_users = total_users + 1
-             else:
-                 print('{:<22}{:<20}{:<15}{:<15}{:<20}'.format(line_s[0],line_s[1].split(':')[0],line_s[2],line_s[3],line_s[4]))
-                 total_users = total_users + 1
+     if len(line_s) == 5:
+         if args.users:
+             for user in args.users:
+                 if user in line_s[0]:
+                     print('{:<22}{:<20}{:<15}{:<15}{:<20}'.format(line_s[0],line_s[1].split(':')[0],line_s[2],line_s[3],line_s[4]))
+                     total_users = total_users + 1
+         else:
+             print('{:<22}{:<20}{:<15}{:<15}{:<20}'.format(line_s[0],line_s[1].split(':')[0],line_s[2],line_s[3],line_s[4]))
+             total_users = total_users + 1
 
 print('-----------------------------------------------------------------------------------------------')
 print('Connected VPN users: {:<5}\n'.format(total_users))
